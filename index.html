@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ship.it — localhost, meet the world</title>
+  <meta name="description"
+    content="Share your local dev server with anyone, instantly. One command. No deploy pipelines. No Git required.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- Grain overlay -->
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- ── NAV ─────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#" class="wordmark">shpthis<span class="wordmark-dot">.</span>com</a>
+      <div class="nav-right">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#how" class="nav-link">How it works</a>
+        <a href="#" class="nav-link nav-link-cta" id="navTryBtn">Open terminal</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ────────────────────────────────── -->
+  <header class="hero">
+    <div class="container hero-container">
+      <p class="hero-eyebrow">Open source · No account required</p>
+      <h1 class="hero-h1">
+        localhost,<br>meet the <em>world</em>
+      </h1>
+      <p class="hero-p">
+        Share your local dev server with anyone — colleagues, clients,
+        friends — with a single command. No CI/CD. No hosting. No config.
+      </p>
+
+      <div class="hero-terminal" id="heroTerminal">
+        <div class="term-chrome">
+          <span class="term-dots">
+            <i class="td td-r"></i><i class="td td-y"></i><i class="td td-g"></i>
+          </span>
+          <span class="term-tab">~/project</span>
+          <button class="term-copy" id="heroCopy" aria-label="Copy command">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+            </svg>
+          </button>
+        </div>
+        <div class="term-body">
+          <div class="term-line">
+            <span class="term-ps1">$</span>
+            <span id="heroTyped"></span><span class="term-caret" id="heroCaret"></span>
+          </div>
+          <div id="heroOut"></div>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <button class="btn" id="heroTryBtn">Open terminal</button>
+        <a href="#how" class="btn btn-ghost">See how it works<span class="arrow">↓</span></a>
+      </div>
+    </div>
+    <div class="hero-fade" aria-hidden="true"></div>
+  </header>
+
+  <!-- ── FEATURES ────────────────────────────── -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-head">
+        <p class="label">Capabilities</p>
+        <h2 class="section-h2">Everything you'd expect.<br>Nothing to configure.</h2>
+      </div>
+
+      <div class="bento">
+        <!-- 1 — Primary: The Command -->
+        <div class="card card-hero reveal">
+          <span class="card-num">01</span>
+          <h3 class="card-h3">One command to go live</h3>
+          <p class="card-p">Run <code>npx shipit</code> in any project directory. We detect your framework, find the dev
+            server, open a tunnel, and hand you a link. Three seconds, start to finish.</p>
+          <div class="card-term">
+            <span class="term-ps1">$</span> npx shipit<br>
+            <span class="dim">▸ Next.js 14 on :3000</span><br>
+            <span class="grn">✓</span> <span class="blu">https://shpthis.com/a7x3k</span> <span class="dim">—
+              copied</span>
+          </div>
+        </div>
+
+        <!-- 2 — Secure -->
+        <div class="card reveal">
+          <span class="card-num">02</span>
+          <h3 class="card-h3">Encrypted & ephemeral</h3>
+          <p class="card-p">Every tunnel is end-to-end encrypted. Links self-destruct after 24 hours — or sooner, if you
+            choose. Add a password with one flag.</p>
+        </div>
+
+        <!-- 3 — Live Reload -->
+        <div class="card reveal">
+          <span class="card-num">03</span>
+          <h3 class="card-h3">Live reload included</h3>
+          <p class="card-p">HMR works through the tunnel. Edit locally, and every viewer sees the change instantly — no
+            manual refresh.</p>
+        </div>
+
+        <!-- 4 — Frameworks (wide) -->
+        <div class="card card-wide reveal">
+          <span class="card-num">04</span>
+          <h3 class="card-h3">Framework agnostic</h3>
+          <p class="card-p">Anything running on localhost works. First-class support for the tools you already use.</p>
+          <div class="tag-cloud">
+            <span class="tag">Next.js</span>
+            <span class="tag">Vite</span>
+            <span class="tag">Nuxt</span>
+            <span class="tag">SvelteKit</span>
+            <span class="tag">Astro</span>
+            <span class="tag">Remix</span>
+            <span class="tag">Flask</span>
+            <span class="tag">Rails</span>
+            <span class="tag">Django</span>
+            <span class="tag">Express</span>
+            <span class="tag">Go</span>
+            <span class="tag">Rust</span>
+          </div>
+        </div>
+
+        <!-- 5 — Share -->
+        <div class="card reveal">
+          <span class="card-num">05</span>
+          <h3 class="card-h3">Share anywhere</h3>
+          <p class="card-p">The link works in any browser, on any device. Paste it in Slack, iMessage, WhatsApp, email —
+            wherever.</p>
+        </div>
+
+        <!-- 6 — Debug -->
+        <div class="card reveal">
+          <span class="card-num">06</span>
+          <h3 class="card-h3">Built-in dashboard</h3>
+          <p class="card-p">See who's viewing, inspect request logs, monitor bandwidth — all from your terminal.
+            Real-time, zero setup.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ────────────────────────── -->
+  <section class="section section-alt" id="how">
+    <div class="container">
+      <div class="section-head">
+        <p class="label">Workflow</p>
+        <h2 class="section-h2">Three keystrokes from<br>localhost to live.</h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="step-n">1</div>
+          <div>
+            <h3 class="step-h3">Run the command</h3>
+            <p class="step-p">Open your terminal in any project and type <code>npx shipit</code>. Framework and port are
+              auto-detected.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-n">2</div>
+          <div>
+            <h3 class="step-h3">Get a shareable link</h3>
+            <p class="step-p">A unique HTTPS URL is generated and copied to your clipboard. Secured and rate-limited by
+              default.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-n">3</div>
+          <div>
+            <h3 class="step-h3">Send it</h3>
+            <p class="step-p">Paste the link anywhere. Recipients see your live dev server in their browser — updates
+              included.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ─────────────────────────────────── -->
+  <section class="section cta-section">
+    <div class="container cta-inner">
+      <h2 class="cta-h2">Ready to ship?</h2>
+      <p class="cta-p">Your local project is one command away from a live URL.</p>
+      <div class="cta-cmd" id="ctaCopy">
+        <code>npx shipit</code>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ──────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="wordmark wordmark-sm">shpthis<span class="wordmark-dot">.</span>com</span>
+      <span class="footer-mid">Built for developers who ship.</span>
+      <div class="footer-links">
+        <a href="#">GitHub</a>
+        <a href="#">Docs</a>
+        <a href="#">@shpthis</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═════════════════════════════════════════ -->
+  <!--  TERMINAL MODAL                          -->
+  <!-- ═════════════════════════════════════════ -->
+  <div class="overlay" id="terminalModal">
+    <div class="overlay-bg" id="overlayBg"></div>
+    <div class="modal-wrap">
+      <div class="modal">
+        <div class="term-chrome modal-chrome">
+          <span class="term-dots"><i class="td td-r"></i><i class="td td-y"></i><i class="td td-g"></i></span>
+          <span class="term-tab">shpthis.com</span>
+          <button class="modal-x" id="modalClose" aria-label="Close">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-grid">
+          <!-- Main term -->
+          <div class="mpanel mpanel-main">
+            <span class="mpanel-label">Terminal</span>
+            <div class="m-term-body" id="mTermBody"></div>
+            <div class="m-input-row">
+              <span class="term-ps1">$</span>
+              <input type="text" id="mInput" class="m-input" placeholder="type shipit to start…" autocomplete="off"
+                spellcheck="false">
+            </div>
+          </div>
+          <!-- Status -->
+          <div class="mpanel mpanel-status">
+            <span class="mpanel-label">Status</span>
+            <div class="s-rows">
+              <div class="s-row"><span class="s-k">State</span><span class="s-v" id="sState"><i
+                    class="sd sd-idle"></i>Idle</span></div>
+              <div class="s-row"><span class="s-k">Tunnel</span><span class="s-v" id="sTunnel">—</span></div>
+              <div class="s-row"><span class="s-k">URL</span><span class="s-v s-url" id="sUrl">—</span></div>
+              <div class="s-row"><span class="s-k">Viewers</span><span class="s-v" id="sViewers">—</span></div>
+              <div class="s-row"><span class="s-k">Uptime</span><span class="s-v" id="sUptime">—</span></div>
+            </div>
+          </div>
+          <!-- Logs -->
+          <div class="mpanel mpanel-logs">
+            <span class="mpanel-label">Log</span>
+            <div class="log-list" id="logList">
+              <div class="log-row"><span class="log-t">—</span><span class="log-m dim">waiting for input</span></div>
+            </div>
+          </div>
+          <!-- Actions -->
+          <div class="mpanel mpanel-actions">
+            <button class="abtn" id="aShip">Ship</button>
+            <button class="abtn" id="aStop" disabled>Stop</button>
+            <button class="abtn" id="aCopy" disabled>Copy URL</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
