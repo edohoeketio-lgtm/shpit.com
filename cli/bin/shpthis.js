@@ -4,6 +4,12 @@ const startTunnel = require('../src/client.js');
 const args = process.argv.slice(2);
 let port = 3000;
 
+if (args.includes('--version') || args.includes('-v')) {
+    const pkg = require('../package.json');
+    console.log(`v${pkg.version}`);
+    process.exit(0);
+}
+
 for (let i = 0; i < args.length; i++) {
     if (args[i] === '--port' || args[i] === '-p') {
         port = parseInt(args[i + 1], 10);
