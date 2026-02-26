@@ -13,7 +13,7 @@ function generateId() {
 
 function startTunnel(port) {
     const tunnelId = generateId();
-    console.log(`\n🚀 shpthis CLI`);
+    console.log(`\n🚀 shpit CLI`);
     console.log(`\n  ▸ Exposing: http://127.0.0.1:${port}`);
     console.log(`  ▸ Connecting to relay...`);
 

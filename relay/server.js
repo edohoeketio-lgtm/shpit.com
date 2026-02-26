@@ -68,7 +68,7 @@ app.use((req, res, next) => {
     }
 
     if (!tunnelId || !tunnels.has(tunnelId)) {
-        return res.status(404).send('shpthis: tunnel not found or offline.\\n\\nMake sure your CLI is running.');
+        return res.status(404).send('shpit: tunnel not found or offline.\\n\\nMake sure your CLI is running.');
     }
 
     const ws = tunnels.get(tunnelId);
@@ -89,7 +89,7 @@ app.use((req, res, next) => {
     const timeout = setTimeout(() => {
         pendingRequests.delete(reqId);
         if (!res.headersSent) {
-            res.status(504).send('shpthis: Gateway Timeout. CLI did not respond in time.');
+            res.status(504).send('shpit: Gateway Timeout. CLI did not respond in time.');
         }
     }, 15000);
 
@@ -121,5 +121,5 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 8081;
 server.listen(PORT, () => {
-    console.log(`🚀 shpthis Node Relay Server running on port ${PORT}`);
+    console.log(`🚀 shpit Node Relay Server running on port ${PORT}`);
 });

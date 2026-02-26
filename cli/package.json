@@ -1,6 +1,6 @@
 {
   "name": "@skxng/shpit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Share your local dev server with anyone, instantly.",
   "main": "src/client.js",
   "bin": {

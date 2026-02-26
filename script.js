@@ -12,7 +12,7 @@
   const typed = $('#heroTyped');
   const caret = $('#heroCaret');
   const out = $('#heroOut');
-  const cmd = 'npx shipit';
+  const cmd = 'npx shpit';
 
   async function typeHero() {
     await wait(700);
@@ -29,7 +29,7 @@
       ['  ▸ Opening tunnel…       port 3000', ''],
       ['  ▸ Generating link…      done', ''],
       ['', ''],
-      ['  ✓ Live at  ', 'out-ok', 'https://shpthis.com/a7x3k9', 'out-url'],
+      ['  ✓ Live at  ', 'out-ok', 'https://shp.it/a7x3k9', 'out-url'],
       ['  ↳ copied to clipboard', ''],
       ['  ↳ expires in 24 h', ''],
     ];
@@ -72,8 +72,8 @@
     navigator.clipboard.writeText(text).then(() => showToast('Copied'));
   }
 
-  $('#heroCopy')?.addEventListener('click', () => copy('npx shipit'));
-  $('#ctaCopy')?.addEventListener('click', () => copy('npx shipit'));
+  $('#heroCopy')?.addEventListener('click', () => copy('npx shpit'));
+  $('#ctaCopy')?.addEventListener('click', () => copy('npx shpit'));
 
   /* ═══════════════════════════════════════════════
      Terminal Modal
@@ -151,7 +151,7 @@
     mBody.innerHTML = '';
     logList.innerHTML = '';
 
-    addLine(`<span style="color:var(--accent)">~ $</span> <span style="color:var(--t1)">npx shipit</span>`);
+    addLine(`<span style="color:var(--accent)">~ $</span> <span style="color:var(--t1)">npx shpit</span>`);
     addLog('command received', 'log-info');
     setStatus('Starting', 'sd-conn', '—', '—', '—');
 
@@ -171,7 +171,7 @@
     addLog('tunnel active', 'log-ok');
 
     await wait(500);
-    const url = 'https://shpthis.com/a7x3k9';
+    const url = 'https://shp.it/a7x3k9';
     addLine('');
     addLine(`<span style="color:var(--accent)">  ✓ live at </span><span style="color:var(--blue);text-decoration:underline">${url}</span>`);
     addLine(`<span style="color:var(--t3)">  ↳ copied · expires 24 h · no password</span>`);
@@ -224,12 +224,12 @@
     mInput.value = '';
     if (!v) return;
 
-    if (['shipit', 'npx shipit', 'ship'].includes(v)) return ship();
+    if (['shpit', 'npx shpit', 'ship'].includes(v)) return ship();
     if (['stop', 'exit', 'quit'].includes(v)) return stop();
     if (v === 'clear') { mBody.innerHTML = ''; return; }
     if (v === 'help') {
       addLine(`<span style="color:var(--accent)">~ $</span> help`);
-      addLine(`<span style="color:var(--t3)">  shipit</span>  <span style="color:var(--t3)">start sharing</span>`);
+      addLine(`<span style="color:var(--t3)">  shpit</span>  <span style="color:var(--t3)">start sharing</span>`);
       addLine(`<span style="color:var(--t3)">  stop</span>    <span style="color:var(--t3)">stop sharing</span>`);
       addLine(`<span style="color:var(--t3)">  clear</span>   <span style="color:var(--t3)">clear terminal</span>`);
       return;
