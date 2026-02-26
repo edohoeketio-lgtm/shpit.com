@@ -50,20 +50,43 @@ wss.on('connection', (ws, req) => {
 app.use((req, res, next) => {
     let tunnelId = null;
 
-    // Host-based routing (e.g., a7x3k9.shpthis.com)
+    // Helper to extract tunnelId from cookies
+    const getCookie = (name) => {
+        const value = `; ${req.headers.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    };
+
+    // 1. Host-based routing (e.g., a7x3k9.shpthis.com)
     const host = req.headers.host || '';
     const subdomain = host.split('.')[0];
-
     if (tunnels.has(subdomain)) {
         tunnelId = subdomain;
-    } else if (req.path.startsWith('/proxy/')) {
-        // Path-based fallback routing for local testing
+    }
+
+    // 2. Path-based routing (e.g., /proxy/abcdef/)
+    if (!tunnelId && req.path.startsWith('/proxy/')) {
         const parts = req.path.split('/');
         tunnelId = parts[2];
+
+        // Sticky Session: Set cookie so assets (/, /css, etc) work
+        res.cookie('shpit_id', tunnelId, { path: '/', maxAge: 3600000 }); // 1 hour
+
         req.url = '/' + parts.slice(3).join('/') + (req.search || '');
-        if (req.url === '/') {
-            // Keep the trailing slash if there wasn't one explicitly requested?
-            // Let's just pass it correctly.
+    }
+
+    // 3. Sticky Session Fallback (Cookies)
+    if (!tunnelId) {
+        tunnelId = getCookie('shpit_id');
+    }
+
+    // 4. Referer Fallback (Reliable for assets)
+    if (!tunnelId && req.headers.referer) {
+        const refUrl = req.headers.referer;
+        if (refUrl.includes('/proxy/')) {
+            const match = refUrl.match(/\/proxy\/([^/]+)/);
+            if (match) tunnelId = match[1];
         }
     }
 
