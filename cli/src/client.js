@@ -53,12 +53,11 @@ async function startTunnel(port) {
         console.log(`  ✓ Tunnel active!`);
 
         const isLocal = RELAY_HOST.includes('127.0.0.1') || RELAY_HOST.includes('localhost');
-        const protocol = process.env.RELAY_SECURE || !isLocal ? 'https' : 'http';
+        const forceInsecure = process.env.RELAY_SECURE === 'false';
+        const protocol = forceInsecure || isLocal ? 'http' : 'https';
 
         // Host-based URL for production, or path-based fallback
-        const rawUrl = isLocal
-            ? `http://127.0.0.1:8081/proxy/${tunnelId}/`
-            : `https://${RELAY_HOST}/proxy/${tunnelId}/`;
+        const rawUrl = `${protocol}://${RELAY_HOST}/proxy/${tunnelId}/`;
 
         if (isLocal) {
             console.log(`\n  🌍 Public URL: ${rawUrl}\n`);
@@ -152,18 +151,36 @@ async function startTunnel(port) {
                 localReq.end();
             } else if (payload.type === 'ws-connect') {
                 const { socketId, url, headers } = payload;
+                console.log(`[CLI] Received ws-connect for ${url}`);
+                const cleanWsHeaders = { ...headers };
+                delete cleanWsHeaders.host;
+                delete cleanWsHeaders.connection;
+                delete cleanWsHeaders.upgrade;
+                delete cleanWsHeaders['sec-websocket-key'];
+                delete cleanWsHeaders['sec-websocket-version'];
+                delete cleanWsHeaders['sec-websocket-extensions'];
+                delete cleanWsHeaders['sec-websocket-protocol'];
+
                 const localWsUrl = `ws://${targetHost}:${finalPort}${url}`;
 
                 const localWs = new WebSocket(localWsUrl, {
                     headers: {
-                        ...headers,
+                        ...cleanWsHeaders,
                         host: `${targetHost}:${finalPort}`
                     }
                 });
 
                 localBrowserSockets.set(socketId, localWs);
 
+                localWs.on('open', () => {
+                    if (localWs._msgQueue) {
+                        for (const buf of localWs._msgQueue) localWs.send(buf);
+                        localWs._msgQueue = null;
+                    }
+                });
+
                 localWs.on('message', (data, isBinary) => {
+                    console.log(`[CLI] Local WS received data: ${data.toString()}`);
                     ws.send(JSON.stringify({
                         type: 'ws-message',
                         socketId,
@@ -173,6 +190,7 @@ async function startTunnel(port) {
                 });
 
                 localWs.on('close', () => {
+                    console.log(`[CLI] Local WS closed for ${socketId}`);
                     localBrowserSockets.delete(socketId);
                     ws.send(JSON.stringify({ type: 'ws-close', socketId }));
                 });
@@ -184,10 +202,15 @@ async function startTunnel(port) {
             } else if (payload.type === 'ws-message') {
                 const { socketId, data, isBinary } = payload;
                 const localWs = localBrowserSockets.get(socketId);
-                if (localWs && localWs.readyState === WebSocket.OPEN) {
+                if (localWs) {
                     try {
                         const buf = isBinary ? Buffer.from(data, 'base64') : data;
-                        localWs.send(buf);
+                        if (localWs.readyState === WebSocket.OPEN) {
+                            localWs.send(buf);
+                        } else if (localWs.readyState === WebSocket.CONNECTING) {
+                            if (!localWs._msgQueue) localWs._msgQueue = [];
+                            localWs._msgQueue.push(buf);
+                        }
                     } catch (err) {
                         console.error('Failed to decode local ws-message:', err);
                     }

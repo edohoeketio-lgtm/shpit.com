@@ -5,7 +5,7 @@ const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ noServer: true });
 
 const tunnels = new Map();
 const pendingRequests = new Map();
@@ -143,7 +143,13 @@ function getTunnelId(req) {
 // Handle Browser WebSocket connections (e.g. Vite HMR)
 server.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    if (url.pathname === '/register') return; // Handled by wss
+
+    if (url.pathname === '/register') {
+        wss.handleUpgrade(req, socket, head, (ws) => {
+            wss.emit('connection', ws, req);
+        });
+        return;
+    }
 
     const tunnelId = getTunnelId(req);
     if (!tunnelId) {
@@ -151,8 +157,16 @@ server.on('upgrade', (req, socket, head) => {
         return;
     }
 
+    // Strip the proxy path so the local dev server gets the correct path (e.g., '/')
+    if (req.url.startsWith('/proxy/')) {
+        const parts = req.url.split('?');
+        const pathParts = parts[0].split('/');
+        req.url = '/' + pathParts.slice(3).join('/') + (parts[1] ? '?' + parts[1] : '');
+    }
+
     const browserWss = new WebSocket.Server({ noServer: true });
     browserWss.handleUpgrade(req, socket, head, (ws) => {
+        console.log(`[Relay] WS Upgraded for tunnel ${tunnelId}, sending ws-connect!`);
         const socketId = crypto.randomUUID();
         const cliWs = tunnels.get(tunnelId);
 

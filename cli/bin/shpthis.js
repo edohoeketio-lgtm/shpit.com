@@ -10,9 +10,13 @@ if (args.includes('--version') || args.includes('-v')) {
     process.exit(0);
 }
 
-for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--port' || args[i] === '-p') {
-        port = parseInt(args[i + 1], 10);
+if (args[0] && !args[0].startsWith('-')) {
+    port = parseInt(args[0], 10);
+} else {
+    for (let i = 0; i < args.length; i++) {
+        if (args[i] === '--port' || args[i] === '-p') {
+            port = parseInt(args[i + 1], 10);
+        }
     }
 }
 
