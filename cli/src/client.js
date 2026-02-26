@@ -4,9 +4,9 @@ const https = require('https');
 const https = require('https');
 
 // For local testing of the Node.js Relay Server, we use localhost:8081
-// In production, this would be wss://your-relay-server.com
-const RELAY_HOST = process.env.RELAY_HOST || '127.0.0.1:8081';
-const RELAY_URL = process.env.RELAY_SECURE ? `wss://${RELAY_HOST}` : `ws://${RELAY_HOST}`;
+// In production, this connects to the live Render web service
+const RELAY_HOST = process.env.RELAY_HOST || 'shpit-com.onrender.com';
+const RELAY_URL = process.env.RELAY_SECURE === 'false' || RELAY_HOST.includes('127.0.0.1') ? `ws://${RELAY_HOST}` : `wss://${RELAY_HOST}`;
 
 function generateId() {
     return Math.random().toString(36).substring(2, 8);
@@ -29,7 +29,7 @@ function startTunnel(port) {
         // Host-based URL for production, or path-based fallback
         const rawUrl = isLocal
             ? `http://127.0.0.1:8081/proxy/${tunnelId}/`
-            : `https://${tunnelId}.${RELAY_HOST}`;
+            : `https://${RELAY_HOST}/proxy/${tunnelId}/`;
 
         if (isLocal) {
             console.log(`\n  🌍 Public URL: ${rawUrl}\n`);
