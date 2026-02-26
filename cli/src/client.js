@@ -8,63 +8,10 @@ const path = require('path');
 const RELAY_HOST = process.env.RELAY_HOST || 'shpit-com.onrender.com';
 const RELAY_URL = process.env.RELAY_SECURE === 'false' || RELAY_HOST.includes('127.0.0.1') ? `ws://${RELAY_HOST}` : `wss://${RELAY_HOST}`;
 
-const COMMON_PORTS = [3000, 5173, 8080, 8000, 4200, 1234];
+const { findActivePort, checkPort } = require('./utils');
 
 function generateId() {
     return Math.random().toString(36).substring(2, 8);
-}
-
-function detectFrameworkPort() {
-    try {
-        const pkgPath = path.join(process.cwd(), 'package.json');
-        if (fs.existsSync(pkgPath)) {
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-            const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-            if (deps.next) return 3000;
-            if (deps.vite) return 5173;
-            if (deps.nuxt) return 3000;
-            if (deps['@sveltejs/kit']) return 5173;
-        }
-    } catch (e) { }
-    return 3000;
-}
-
-function checkPort(port, host = '127.0.0.1') {
-    return new Promise((resolve) => {
-        const socket = net.createConnection({ port, host });
-        socket.on('connect', () => {
-            socket.destroy();
-            resolve({ alive: true, host });
-        });
-        socket.on('error', () => {
-            if (host === '127.0.0.1') {
-                // If 127.0.0.1 fails, try localhost (IPv6 fallback)
-                checkPort(port, 'localhost').then(resolve);
-            } else {
-                resolve({ alive: false });
-            }
-        });
-        socket.setTimeout(400);
-        socket.on('timeout', () => {
-            socket.destroy();
-            resolve({ alive: false });
-        });
-    });
-}
-
-async function findActivePort(explicitPort) {
-    if (explicitPort) {
-        const res = await checkPort(explicitPort);
-        return { port: explicitPort, host: res.host || '127.0.0.1', alive: res.alive };
-    }
-
-    // Scan common ports
-    for (const port of COMMON_PORTS) {
-        const res = await checkPort(port);
-        if (res.alive) return { port, host: res.host, alive: true };
-    }
-
-    return { port: detectFrameworkPort(), host: '127.0.0.1', alive: false };
 }
 
 let targetHost = '127.0.0.1';
