@@ -11,7 +11,7 @@ for (let i = 0; i < args.length; i++) {
 }
 
 if (isNaN(port)) {
-    console.error("shpit: invalid port specified");
+    console.error("shp-serve: invalid port specified");
     process.exit(1);
 }
 
