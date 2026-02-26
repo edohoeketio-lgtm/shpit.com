@@ -12,42 +12,39 @@ function detectFrameworkPort(cwd = process.cwd()) {
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
             const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
 
-            // Vite defaults to 5173, but often falls back to 5174/5175
             if (deps.vite || deps['@sveltejs/kit']) return 5173;
-
-            // Next.js and typical Node apps default to 3000, but often use 3001
             if (deps.next || deps.nuxt || deps.express) return 3000;
         }
-    } catch (e) {
-        // Ignore error
-    }
+    } catch (e) { }
     return 3000;
 }
 
 function findOpenPortsByLsof() {
     try {
-        // -iTCP -sTCP:LISTEN: only TCP listening ports
-        // -P: inhibit conversion of port numbers to port names
-        // -n: inhibit conversion of network numbers to host names
         const output = execSync('lsof -iTCP -sTCP:LISTEN -P -n', { encoding: 'utf8' });
         const lines = output.split('\n');
-        const ports = new Set();
+        const results = [];
+        const seenPorts = new Set();
 
         for (const line of lines) {
-            // Looking for lines like: "node 1234 sk 5u IPv4 ... TCP *:5173 (LISTEN)"
-            const match = line.match(/TCP (?:[\d\.]+|\*):(\d+) \(LISTEN\)/);
+            // Updated regex to be more robust, capturing the process name and port
+            const match = line.match(/^(\S+).+TCP (?:[\d\.]+|\*):(\d+) \(LISTEN\)/);
             if (match) {
-                const port = parseInt(match[1], 10);
-                // Filter out common system/utility ports
-                // Focus on 3000-9999 range which covers most dev environments
-                if (port >= 3000 && port <= 9999) {
+                const processName = match[1];
+                const port = parseInt(match[2], 10);
+
+                // Exclude system and utility processes to focus on dev servers
+                const isSystem = /ControlCe|Spotify|sharing|rapportd|identity|WindowSer|locationd|navidrome|transmiss|trustd|syslogd|distnoted/.test(processName);
+
+                if (port >= 3000 && port <= 9999 && !seenPorts.has(port) && !isSystem) {
                     if (![6379, 5432, 27017, 9222].includes(port)) {
-                        ports.add(port);
+                        results.push({ port, process: processName });
+                        seenPorts.add(port);
                     }
                 }
             }
         }
-        return Array.from(ports);
+        return results;
     } catch (e) {
         return [];
     }
@@ -81,19 +78,14 @@ async function findActivePort(explicitPort, cwd = process.cwd()) {
         return { port: explicitPort, host: res.host || '127.0.0.1', alive: res.alive };
     }
 
-    // 1. Try dynamic detection via lsof
-    const dynamicPorts = findOpenPortsByLsof();
-    if (dynamicPorts.length > 0) {
-        const frameworkPort = detectFrameworkPort(cwd);
-        // If the framework's default is open, use that
-        if (dynamicPorts.includes(frameworkPort)) {
-            return { port: frameworkPort, host: '127.0.0.1', alive: true };
+    const dynamicCandidates = findOpenPortsByLsof();
+    if (dynamicCandidates.length > 0) {
+        if (dynamicCandidates.length === 1) {
+            return { port: dynamicCandidates[0].port, host: '127.0.0.1', alive: true };
         }
-        // Otherwise pick the first one and return it
-        return { port: dynamicPorts[0], host: '127.0.0.1', alive: true };
+        return { candidates: dynamicCandidates, host: '127.0.0.1', alive: true };
     }
 
-    // 2. Scan common ports as fallback
     for (const port of COMMON_PORTS) {
         const res = await checkPort(port);
         if (res.alive) return { port, host: res.host, alive: true };

@@ -20,7 +20,35 @@ async function startTunnel(port) {
     const tunnelId = generateId();
     console.log(`\n🚀 shp-serve CLI`);
 
-    const result = await findActivePort(port);
+    let result = await findActivePort(port);
+
+    // Handle interactive choice if multiple candidates found
+    if (result.candidates && result.candidates.length > 1) {
+        console.log(`\n  👀 Multiple local servers detected:`);
+        result.candidates.forEach((c, i) => {
+            console.log(`     ${i + 1}) ${c.process} (port ${c.port})`);
+        });
+
+        const readline = require('readline').createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        const choice = await new Promise(resolve => {
+            readline.question(`\n  👉 Select server (1-${result.candidates.length}) [default 1]: `, (input) => {
+                readline.close();
+                const idx = parseInt(input, 10) - 1;
+                if (!isNaN(idx) && result.candidates[idx]) {
+                    resolve(result.candidates[idx]);
+                } else {
+                    resolve(result.candidates[0]);
+                }
+            });
+        });
+
+        result = { port: choice.port, host: '127.0.0.1', alive: true };
+    }
+
     targetHost = result.host;
     const finalPort = result.port;
 
