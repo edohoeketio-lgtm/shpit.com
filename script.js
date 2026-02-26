@@ -229,14 +229,19 @@
     if (v === 'clear') { mBody.innerHTML = ''; return; }
     if (v === 'help') {
       addLine(`<span style="color:var(--accent)">~ $</span> help`);
-      addLine(`<span style="color:var(--t3)">  shpit</span>  <span style="color:var(--t3)">start sharing</span>`);
-      addLine(`<span style="color:var(--t3)">  stop</span>    <span style="color:var(--t3)">stop sharing</span>`);
-      addLine(`<span style="color:var(--t3)">  clear</span>   <span style="color:var(--t3)">clear terminal</span>`);
+      addLine(`<span style="color:var(--t3)">  (this is a simulated demo terminal)</span>`);
+      addLine(`<span style="color:var(--t3)">  shpit</span>  <span style="color:var(--t3)">run the simulation</span>`);
+      addLine(`<span style="color:var(--t3)">  stop</span>   <span style="color:var(--t3)">stop the simulation</span>`);
+      addLine(`<span style="color:var(--t3)">  clear</span>  <span style="color:var(--t3)">clear window</span>`);
+      addLine(``);
+      addLine(`<span style="color:var(--t2)">  To use the actual tool, run in your real terminal:</span>`);
+      addLine(`<span style="color:var(--accent)">  npx @skxng/shpit</span>`);
       return;
     }
 
     addLine(`<span style="color:var(--accent)">~ $</span> ${esc(v)}`);
-    addLine(`<span style="color:#ff5f57">  not found: ${esc(v)}</span>`);
+    addLine(`<span style="color:#ff5f57">  shpit: command not found</span>`);
+    addLine(`<span style="color:var(--t3)">  (Type <span style="color:var(--t2)">help</span> to see demo commands, or use a real terminal to run <span style="color:var(--t2)">npx @skxng/shpit</span>)</span>`);
   });
 
   aShip?.addEventListener('click', ship);

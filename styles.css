@@ -795,6 +795,17 @@ code {
   flex-shrink: 0;
 }
 
+.badge-sim {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--t2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+}
+
 /* Main panel */
 .mpanel-main {
   grid-row: 1/3
