@@ -12,6 +12,10 @@
   "scripts": {
     "start": "node ./bin/shpthis.js"
   },
+  "files": [
+    "bin",
+    "src"
+  ],
   "dependencies": {
     "ws": "^8.19.0"
   },
