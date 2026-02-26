@@ -1,6 +1,6 @@
 {
   "name": "shp-serve",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "Share your local dev server with anyone, instantly.",
   "main": "src/client.js",
   "bin": {

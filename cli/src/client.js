@@ -2,58 +2,101 @@ const net = require('net');
 const WebSocket = require('ws');
 const http = require('http');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
 const RELAY_HOST = process.env.RELAY_HOST || 'shpit-com.onrender.com';
 const RELAY_URL = process.env.RELAY_SECURE === 'false' || RELAY_HOST.includes('127.0.0.1') ? `ws://${RELAY_HOST}` : `wss://${RELAY_HOST}`;
+
+const COMMON_PORTS = [3000, 5173, 8080, 8000, 4200, 1234];
 
 function generateId() {
     return Math.random().toString(36).substring(2, 8);
 }
 
-function checkLocalPort(port) {
+function detectFrameworkPort() {
+    try {
+        const pkgPath = path.join(process.cwd(), 'package.json');
+        if (fs.existsSync(pkgPath)) {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+            if (deps.next) return 3000;
+            if (deps.vite) return 5173;
+            if (deps.nuxt) return 3000;
+            if (deps['@sveltejs/kit']) return 5173;
+        }
+    } catch (e) { }
+    return 3000;
+}
+
+function checkPort(port, host = '127.0.0.1') {
     return new Promise((resolve) => {
-        const socket = net.createConnection({ port, host: '127.0.0.1' });
+        const socket = net.createConnection({ port, host });
         socket.on('connect', () => {
             socket.destroy();
-            resolve(true);
+            resolve({ alive: true, host });
         });
         socket.on('error', () => {
-            // If 127.0.0.1 fails, try localhost (which might be IPv6)
-            const socket6 = net.createConnection({ port, host: 'localhost' });
-            socket6.on('connect', () => {
-                socket6.destroy();
-                resolve(true);
-            });
-            socket6.on('error', () => {
-                resolve(false);
-            });
-            socket6.setTimeout(500);
-            socket6.on('timeout', () => {
-                socket6.destroy();
-                resolve(false);
-            });
+            if (host === '127.0.0.1') {
+                // If 127.0.0.1 fails, try localhost (IPv6 fallback)
+                checkPort(port, 'localhost').then(resolve);
+            } else {
+                resolve({ alive: false });
+            }
         });
-        socket.setTimeout(500);
+        socket.setTimeout(400);
         socket.on('timeout', () => {
             socket.destroy();
-            resolve(false);
+            resolve({ alive: false });
         });
     });
 }
 
+async function findActivePort(explicitPort) {
+    if (explicitPort) {
+        const res = await checkPort(explicitPort);
+        return { port: explicitPort, host: res.host || '127.0.0.1', alive: res.alive };
+    }
+
+    // Scan common ports
+    for (const port of COMMON_PORTS) {
+        const res = await checkPort(port);
+        if (res.alive) return { port, host: res.host, alive: true };
+    }
+
+    return { port: detectFrameworkPort(), host: '127.0.0.1', alive: false };
+}
+
+let targetHost = '127.0.0.1';
+
 async function startTunnel(port) {
     const tunnelId = generateId();
     console.log(`\n🚀 shp-serve CLI`);
-    console.log(`\n  ▸ Exposing: http://127.0.0.1:${port}`);
+
+    const result = await findActivePort(port);
+    targetHost = result.host;
+    const finalPort = result.port;
+
+    console.log(`\n  ▸ Exposing: http://${targetHost}:${finalPort}`);
     console.log(`  ▸ Checking local server...`);
 
-    const isLocalAlive = await checkLocalPort(port);
-    if (!isLocalAlive) {
-        console.log(`  ⚠️  Warning: No server detected on port ${port}.`);
-        console.log(`     Is your server on a different port? Try: 'shp-serve --port 8080'`);
-        console.log(`     (Currently trying to reach: http://127.0.0.1:${port})`);
+    if (!result.alive) {
+        console.log(`  ⚠️  Warning: No server detected on port ${finalPort}.`);
+        console.log(`     Waiting for your server to start...`);
+
+        // Wait loop
+        let isAlive = false;
+        while (!isAlive) {
+            await new Promise(r => setTimeout(r, 1500));
+            const check = await checkPort(finalPort);
+            if (check.alive) {
+                isAlive = true;
+                targetHost = check.host;
+                console.log(`  ✓ Local server detected on ${targetHost}.`);
+            }
+        }
     } else {
-        console.log(`  ✓ Local server detected.`);
+        console.log(`  ✓ Local server detected on ${targetHost}.`);
     }
 
     console.log(`  ▸ Connecting to relay...`);
@@ -106,8 +149,8 @@ async function startTunnel(port) {
                 delete cleanHeaders['x-forwarded-proto'];
 
                 const localReqOpts = {
-                    hostname: '127.0.0.1',
-                    port: port,
+                    hostname: targetHost,
+                    port: finalPort,
                     path: url,
                     method: method,
                     headers: cleanHeaders,
@@ -136,7 +179,7 @@ async function startTunnel(port) {
                 localReq.on('error', (err) => {
                     let errorMessage = err.message;
                     if (err.code === 'ECONNREFUSED') {
-                        errorMessage = `Connection Refused: No server found at 127.0.0.1:${port}. Is your dev server running?`;
+                        errorMessage = `Connection Refused: No server found at ${targetHost}:${finalPort}. Is your dev server running?`;
                     }
                     console.error(`  [!] ${errorMessage}`);
 
@@ -145,7 +188,7 @@ async function startTunnel(port) {
                         id: id,
                         status: 502,
                         headers: { 'content-type': 'text/plain' },
-                        body: Buffer.from(`Bad Gateway: Could not reach 127.0.0.1:${port}. Ensure your local server is running.`).toString('base64')
+                        body: Buffer.from(`Bad Gateway: Could not reach ${targetHost}:${finalPort}. Ensure your local server is running.`).toString('base64')
                     }));
                 });
 

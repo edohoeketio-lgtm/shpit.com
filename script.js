@@ -155,17 +155,13 @@
     addLog('command received', 'log-info');
     setStatus('Starting', 'sd-conn', '—', '—', '—');
 
-    await wait(500);
-    addLine(`<span style="color:var(--t3)">  scanning project…</span>`);
-
-    await wait(700);
-    addLine(`<span style="color:var(--t3)">  framework </span><span style="color:var(--blue)">Next.js 14</span><span style="color:var(--t3)"> on :3000</span>`);
-    addLog('Next.js 14 detected', 'log-info');
+    addLine(`<span style="color:var(--t3)">  ▸ Scanning for active local server...</span>`);
+    await wait(800);
+    addLine(`<span style="color:var(--t3)">  framework </span><span style="color:var(--blue)">Next.js 14</span><span style="color:var(--t3)"> detected on :3000</span>`);
+    addLog('Next.js 14 auto-detected', 'log-info');
 
     await wait(600);
-    addLine(`<span style="color:var(--t3)">  ▸ Checking local server…</span>`);
-    await wait(800);
-    addLine(`<span style="color:var(--grn)">  ✓ Local server detected.</span>`);
+    addLine(`<span style="color:var(--grn)">  ✓ Local server detected on 127.0.0.1.</span>`);
 
     await wait(600);
     addLine(`<span style="color:var(--t3)">  ▸ Connecting to relay…</span>`);
@@ -179,7 +175,7 @@
     const url = 'https://shp.it/a7x3k9';
     addLine('');
     addLine(`<span style="color:var(--accent)">  ✓ live at </span><span style="color:var(--blue);text-decoration:underline">${url}</span>`);
-    addLine(`<span style="color:var(--t3)">  ↳ copied · expires 24 h · no password</span>`);
+    addLine(`<span style="color:var(--t3)">  ↳ zero-config · auto-port · secured</span>`);
     addLine('');
     addLine(`<span style="color:var(--t3)">  watching for changes… (type stop to end)</span>`);
 

@@ -2,7 +2,7 @@
 const startTunnel = require('../src/client.js');
 
 const args = process.argv.slice(2);
-let port = 3000;
+let port = null;
 
 if (args.includes('--version') || args.includes('-v')) {
     const pkg = require('../package.json');
