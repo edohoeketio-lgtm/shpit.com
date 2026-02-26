@@ -36,7 +36,8 @@ async function startTunnel(port) {
     const isLocalAlive = await checkLocalPort(port);
     if (!isLocalAlive) {
         console.log(`  ⚠️  Warning: No server detected on port ${port}.`);
-        console.log(`     Ensure your dev server is running, or use '--port ${port}' to switch.`);
+        console.log(`     Is your server on a different port? Try: 'shp-serve --port 8080'`);
+        console.log(`     (Currently trying to reach: http://127.0.0.1:${port})`);
     } else {
         console.log(`  ✓ Local server detected.`);
     }
