@@ -9,6 +9,8 @@ const wss = new WebSocket.Server({ server });
 
 const tunnels = new Map();
 const pendingRequests = new Map();
+const tunnelBrowserSockets = new Map(); // tunnelId -> Set<socketId>
+const tunnelPendingRequests = new Map(); // tunnelId -> Set<reqId>
 
 // Accept WebSocket Connections from the CLI Tool
 wss.on('connection', (ws, req) => {
@@ -20,18 +22,24 @@ wss.on('connection', (ws, req) => {
         return;
     }
 
+    ws.isAlive = true;
+    ws.on('pong', () => { ws.isAlive = true; });
+
     console.log(`[+] CLI Connected: tunnel=${tunnelId}`);
     tunnels.set(tunnelId, ws);
+    tunnelBrowserSockets.set(tunnelId, new Set());
+    tunnelPendingRequests.set(tunnelId, new Set());
 
     ws.on('message', (message) => {
         try {
             const data = JSON.parse(message.toString());
             if (data.type === 'response' && data.id) {
-                // Resolve the pending HTTP request
                 const resolveHttp = pendingRequests.get(data.id);
                 if (resolveHttp) {
                     resolveHttp(data);
                     pendingRequests.delete(data.id);
+                    const pendingSet = tunnelPendingRequests.get(tunnelId);
+                    if (pendingSet) pendingSet.delete(data.id);
                 }
             } else if (data.type === 'ws-message' && data.socketId) {
                 const browserWs = browserSockets.get(data.socketId);
@@ -44,6 +52,8 @@ wss.on('connection', (ws, req) => {
                 if (browserWs) {
                     browserWs.close();
                     browserSockets.delete(data.socketId);
+                    const socketSet = tunnelBrowserSockets.get(tunnelId);
+                    if (socketSet) socketSet.delete(data.socketId);
                 }
             }
         } catch (err) {
@@ -54,7 +64,48 @@ wss.on('connection', (ws, req) => {
     ws.on('close', () => {
         console.log(`[-] CLI Disconnected: tunnel=${tunnelId}`);
         tunnels.delete(tunnelId);
+
+        // Instantly fail pending HTTP requests (avoid 15s hang)
+        const pendingSet = tunnelPendingRequests.get(tunnelId);
+        if (pendingSet) {
+            for (const reqId of pendingSet) {
+                const resolveHttp = pendingRequests.get(reqId);
+                if (resolveHttp) {
+                    resolveHttp({
+                        status: 502,
+                        headers: { 'content-type': 'text/plain' },
+                        body: Buffer.from('shpit: The secure tunnel was disconnected before the request could finish.').toString('base64')
+                    });
+                    pendingRequests.delete(reqId);
+                }
+            }
+        }
+        tunnelPendingRequests.delete(tunnelId);
+
+        // Cleanup dangling browser WebSockets
+        const socketSet = tunnelBrowserSockets.get(tunnelId);
+        if (socketSet) {
+            for (const socketId of socketSet) {
+                const browserWs = browserSockets.get(socketId);
+                if (browserWs) browserWs.close(1001, 'Tunnel closed');
+                browserSockets.delete(socketId);
+            }
+        }
+        tunnelBrowserSockets.delete(tunnelId);
     });
+});
+
+// Broadcast ping to keep tunnels alive every 30 seconds
+const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+        if (ws.isAlive === false) return ws.terminate();
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 30000);
+
+wss.on('close', () => {
+    clearInterval(interval);
 });
 
 const browserSockets = new Map();
@@ -116,12 +167,16 @@ server.on('upgrade', (req, socket, head) => {
         }));
 
         ws.on('message', (data, isBinary) => {
-            cliWs.send(JSON.stringify({
-                type: 'ws-message',
-                socketId,
-                data: isBinary ? data.toString('base64') : data.toString(),
-                isBinary
-            }));
+            try {
+                cliWs.send(JSON.stringify({
+                    type: 'ws-message',
+                    socketId,
+                    data: isBinary ? data.toString('base64') : data.toString(),
+                    isBinary
+                }));
+            } catch (err) {
+                console.error('Failed to stringify or send ws-message:', err);
+            }
         });
 
         ws.on('close', () => {
@@ -166,6 +221,9 @@ app.use((req, res, next) => {
     // Wait for the CLI to send back exactly one response
     const timeout = setTimeout(() => {
         pendingRequests.delete(reqId);
+        const pendingSet = tunnelPendingRequests.get(tunnelId);
+        if (pendingSet) pendingSet.delete(reqId);
+
         if (!res.headersSent) {
             res.status(504).send('shpit: Gateway Timeout. CLI did not respond in time.');
         }
@@ -189,12 +247,20 @@ app.use((req, res, next) => {
 
         // Send body
         if (cliResponse.body) {
-            const buffer = Buffer.from(cliResponse.body, 'base64');
-            res.send(buffer);
+            try {
+                const buffer = Buffer.from(cliResponse.body, 'base64');
+                res.send(buffer);
+            } catch (err) {
+                console.error('Failed to decode body:', err);
+                res.status(502).send('shpit: Bad Gateway (Malformed Response)');
+            }
         } else {
             res.end();
         }
     });
+
+    const pendingSet = tunnelPendingRequests.get(tunnelId);
+    if (pendingSet) pendingSet.add(reqId);
 });
 
 const PORT = process.env.PORT || 8081;

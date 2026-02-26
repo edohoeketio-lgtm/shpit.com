@@ -156,6 +156,7 @@ async function startTunnel(port) {
                     path: url,
                     method: method,
                     headers: cleanHeaders,
+                    timeout: 10000,
                 };
 
                 const localReq = http.request(localReqOpts, (localRes) => {
@@ -176,6 +177,10 @@ async function startTunnel(port) {
                         ws.send(JSON.stringify(responsePayload));
                         console.log(`  [${new Date().toLocaleTimeString()}] ${method} ${url} - ${localRes.statusCode}`);
                     });
+                });
+
+                localReq.on('timeout', () => {
+                    localReq.destroy(new Error('Local server timeout'));
                 });
 
                 localReq.on('error', (err) => {
@@ -233,8 +238,12 @@ async function startTunnel(port) {
                 const { socketId, data, isBinary } = payload;
                 const localWs = localBrowserSockets.get(socketId);
                 if (localWs && localWs.readyState === WebSocket.OPEN) {
-                    const buf = isBinary ? Buffer.from(data, 'base64') : data;
-                    localWs.send(buf);
+                    try {
+                        const buf = isBinary ? Buffer.from(data, 'base64') : data;
+                        localWs.send(buf);
+                    } catch (err) {
+                        console.error('Failed to decode local ws-message:', err);
+                    }
                 }
             } else if (payload.type === 'ws-close') {
                 const { socketId } = payload;
