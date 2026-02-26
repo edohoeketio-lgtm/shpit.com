@@ -1,9 +1,8 @@
+const net = require('net');
 const WebSocket = require('ws');
 const http = require('http');
 const https = require('https');
 
-// For local testing of the Node.js Relay Server, we use localhost:8081
-// In production, this connects to the live Render web service
 const RELAY_HOST = process.env.RELAY_HOST || 'shpit-com.onrender.com';
 const RELAY_URL = process.env.RELAY_SECURE === 'false' || RELAY_HOST.includes('127.0.0.1') ? `ws://${RELAY_HOST}` : `wss://${RELAY_HOST}`;
 
@@ -13,15 +12,30 @@ function generateId() {
 
 function checkLocalPort(port) {
     return new Promise((resolve) => {
-        const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
-            res.on('data', () => { }); // consume data
+        const socket = net.createConnection({ port, host: '127.0.0.1' });
+        socket.on('connect', () => {
+            socket.destroy();
             resolve(true);
         });
-        req.on('error', () => {
-            resolve(false);
+        socket.on('error', () => {
+            // If 127.0.0.1 fails, try localhost (which might be IPv6)
+            const socket6 = net.createConnection({ port, host: 'localhost' });
+            socket6.on('connect', () => {
+                socket6.destroy();
+                resolve(true);
+            });
+            socket6.on('error', () => {
+                resolve(false);
+            });
+            socket6.setTimeout(500);
+            socket6.on('timeout', () => {
+                socket6.destroy();
+                resolve(false);
+            });
         });
-        req.setTimeout(1000, () => {
-            req.destroy();
+        socket.setTimeout(500);
+        socket.on('timeout', () => {
+            socket.destroy();
             resolve(false);
         });
     });
