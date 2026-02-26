@@ -7,7 +7,7 @@ The fastest way to share your local dev server with the world.
 Run the following command in any project directory:
 
 ```bash
-npx @skxng/shp.it --port 8080
+npx shp-serve --port 8080
 ```
 
 *Replace `8080` with the port your local server is running on (e.g., `3000` for Next.js).*

@@ -12,7 +12,7 @@
   const typed = $('#heroTyped');
   const caret = $('#heroCaret');
   const out = $('#heroOut');
-  const cmd = 'npx shpit';
+  const cmd = 'npx shp-serve';
 
   async function typeHero() {
     await wait(700);
@@ -72,8 +72,8 @@
     navigator.clipboard.writeText(text).then(() => showToast('Copied'));
   }
 
-  $('#heroCopy')?.addEventListener('click', () => copy('npx shpit'));
-  $('#ctaCopy')?.addEventListener('click', () => copy('npx shpit'));
+  $('#heroCopy')?.addEventListener('click', () => copy('npx shp-serve'));
+  $('#ctaCopy')?.addEventListener('click', () => copy('npx shp-serve'));
 
   /* ═══════════════════════════════════════════════
      Terminal Modal
@@ -151,7 +151,7 @@
     mBody.innerHTML = '';
     logList.innerHTML = '';
 
-    addLine(`<span style="color:var(--accent)">~ $</span> <span style="color:var(--t1)">npx shpit</span>`);
+    addLine(`<span style="color:var(--accent)">~ $</span> <span style="color:var(--t1)">npx shp-serve</span>`);
     addLog('command received', 'log-info');
     setStatus('Starting', 'sd-conn', '—', '—', '—');
 
@@ -224,24 +224,24 @@
     mInput.value = '';
     if (!v) return;
 
-    if (['shpit', 'npx shpit', 'ship'].includes(v)) return ship();
+    if (['shp-serve', 'npx shp-serve', 'ship', 'shpit'].includes(v)) return ship();
     if (['stop', 'exit', 'quit'].includes(v)) return stop();
     if (v === 'clear') { mBody.innerHTML = ''; return; }
     if (v === 'help') {
       addLine(`<span style="color:var(--accent)">~ $</span> help`);
       addLine(`<span style="color:var(--t3)">  (this is a simulated demo terminal)</span>`);
-      addLine(`<span style="color:var(--t3)">  shpit</span>  <span style="color:var(--t3)">run the simulation</span>`);
+      addLine(`<span style="color:var(--t3)">  shp-serve</span>  <span style="color:var(--t3)">run the simulation</span>`);
       addLine(`<span style="color:var(--t3)">  stop</span>   <span style="color:var(--t3)">stop the simulation</span>`);
       addLine(`<span style="color:var(--t3)">  clear</span>  <span style="color:var(--t3)">clear window</span>`);
       addLine(``);
       addLine(`<span style="color:var(--t2)">  To use the actual tool, run in your real terminal:</span>`);
-      addLine(`<span style="color:var(--accent)">  npx @skxng/shpit</span>`);
+      addLine(`<span style="color:var(--accent)">  npx shp-serve</span>`);
       return;
     }
 
     addLine(`<span style="color:var(--accent)">~ $</span> ${esc(v)}`);
-    addLine(`<span style="color:#ff5f57">  shpit: command not found</span>`);
-    addLine(`<span style="color:var(--t3)">  (Type <span style="color:var(--t2)">help</span> to see demo commands, or use a real terminal to run <span style="color:var(--t2)">npx @skxng/shpit</span>)</span>`);
+    addLine(`<span style="color:#ff5f57">  shp-serve: command not found</span>`);
+    addLine(`<span style="color:var(--t3)">  (Type <span style="color:var(--t2)">help</span> to see demo commands, or use a real terminal to run <span style="color:var(--t2)">npx shp-serve</span>)</span>`);
   });
 
   aShip?.addEventListener('click', ship);
