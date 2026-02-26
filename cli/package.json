@@ -1,11 +1,12 @@
 {
-  "name": "@skxng/shpit",
+  "name": "@skxng/shp.it",
   "version": "1.0.2",
   "description": "Share your local dev server with anyone, instantly.",
   "main": "src/client.js",
   "bin": {
     "shpthis": "./bin/shpthis.js",
-    "shpit": "./bin/shpthis.js"
+    "shpit": "./bin/shpthis.js",
+    "shp.it": "./bin/shpthis.js"
   },
   "scripts": {
     "start": "node ./bin/shpthis.js"
