@@ -26,8 +26,8 @@
     const lines = [
       ['', ''],
       ['  ▸ Detecting framework…  Next.js 14', ''],
-      ['  ▸ Opening tunnel…       port 3000', ''],
-      ['  ▸ Generating link…      done', ''],
+      ['  ▸ Checking local server…  port 3000', ''],
+      ['  ▸ Opening tunnel…       done', ''],
       ['', ''],
       ['  ✓ Live at  ', 'out-ok', 'https://shp.it/a7x3k9', 'out-url'],
       ['  ↳ copied to clipboard', ''],
@@ -163,7 +163,12 @@
     addLog('Next.js 14 detected', 'log-info');
 
     await wait(600);
-    addLine(`<span style="color:var(--t3)">  opening tunnel…</span>`);
+    addLine(`<span style="color:var(--t3)">  ▸ Checking local server…</span>`);
+    await wait(800);
+    addLine(`<span style="color:var(--grn)">  ✓ Local server detected.</span>`);
+
+    await wait(600);
+    addLine(`<span style="color:var(--t3)">  ▸ Connecting to relay…</span>`);
     setStatus('Connecting', 'sd-conn', 'opening', '—', '—');
 
     await wait(1000);
