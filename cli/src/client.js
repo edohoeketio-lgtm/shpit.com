@@ -11,12 +11,37 @@ function generateId() {
     return Math.random().toString(36).substring(2, 8);
 }
 
-function startTunnel(port) {
+function checkLocalPort(port) {
+    return new Promise((resolve) => {
+        const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
+            res.on('data', () => { }); // consume data
+            resolve(true);
+        });
+        req.on('error', () => {
+            resolve(false);
+        });
+        req.setTimeout(1000, () => {
+            req.destroy();
+            resolve(false);
+        });
+    });
+}
+
+async function startTunnel(port) {
     const tunnelId = generateId();
     console.log(`\n🚀 shp-serve CLI`);
     console.log(`\n  ▸ Exposing: http://127.0.0.1:${port}`);
-    console.log(`  ▸ Connecting to relay...`);
+    console.log(`  ▸ Checking local server...`);
 
+    const isLocalAlive = await checkLocalPort(port);
+    if (!isLocalAlive) {
+        console.log(`  ⚠️  Warning: No server detected on port ${port}.`);
+        console.log(`     Ensure your dev server is running, or use '--port ${port}' to switch.`);
+    } else {
+        console.log(`  ✓ Local server detected.`);
+    }
+
+    console.log(`  ▸ Connecting to relay...`);
     const ws = new WebSocket(`${RELAY_URL}/register?id=${tunnelId}`);
 
     ws.on('open', () => {
@@ -41,6 +66,9 @@ function startTunnel(port) {
                     console.log(`\n  🌍 Public URL: ${shortUrl.trim()}`);
                     console.log(`  (Traffic secured via shortener)`);
                     console.log(`\n  [Logs]`);
+                    if (!isLocalAlive) {
+                        console.log(`  [!] Note: Incoming requests will fail until you start your server on port ${port}.`);
+                    }
                 });
             }).on('error', () => {
                 console.log(`\n  🌍 Public URL: ${rawUrl}\n`);
@@ -91,13 +119,18 @@ function startTunnel(port) {
                 });
 
                 localReq.on('error', (err) => {
-                    console.error(`  [!] Error connecting to local port ${port}:`, err.message);
+                    let errorMessage = err.message;
+                    if (err.code === 'ECONNREFUSED') {
+                        errorMessage = `Connection Refused: No server found at 127.0.0.1:${port}. Is your dev server running?`;
+                    }
+                    console.error(`  [!] ${errorMessage}`);
+
                     ws.send(JSON.stringify({
                         type: 'response',
                         id: id,
                         status: 502,
                         headers: { 'content-type': 'text/plain' },
-                        body: Buffer.from(`Bad Gateway: Could not reach 127.0.0.1:${port}`).toString('base64')
+                        body: Buffer.from(`Bad Gateway: Could not reach 127.0.0.1:${port}. Ensure your local server is running.`).toString('base64')
                     }));
                 });
 

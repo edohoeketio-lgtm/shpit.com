@@ -121,5 +121,5 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 8081;
 server.listen(PORT, () => {
-    console.log(`🚀 shpit Node Relay Server running on port ${PORT}`);
+    console.log(`🚀 shp-serve Node Relay Server running on port ${PORT}`);
 });
