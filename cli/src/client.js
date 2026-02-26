@@ -124,8 +124,8 @@ async function startTunnel(port) {
                     console.log(`\n  🌍 Public URL: ${shortUrl.trim()}`);
                     console.log(`  (Traffic secured via shortener)`);
                     console.log(`\n  [Logs]`);
-                    if (!isLocalAlive) {
-                        console.log(`  [!] Note: Incoming requests will fail until you start your server on port ${port}.`);
+                    if (!result.alive) {
+                        console.log(`  [!] Note: Incoming requests will fail until you start your server on port ${finalPort}.`);
                     }
                 });
             }).on('error', () => {
