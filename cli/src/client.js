@@ -1,5 +1,7 @@
 const WebSocket = require('ws');
 const http = require('http');
+const https = require('https');
+const https = require('https');
 
 // For local testing of the Node.js Relay Server, we use localhost:8081
 // In production, this would be wss://your-relay-server.com
@@ -20,8 +22,31 @@ function startTunnel(port) {
 
     ws.on('open', () => {
         console.log(`  ✓ Tunnel active!`);
-        console.log(`\n  🌍 Public URL: http://${tunnelId}.${RELAY_HOST}`);
-        console.log(`  (Note: In production, this would be https://${tunnelId}.shpthis.com)\n`);
+
+        const isLocal = RELAY_HOST.includes('127.0.0.1') || RELAY_HOST.includes('localhost');
+        const protocol = process.env.RELAY_SECURE || !isLocal ? 'https' : 'http';
+
+        // Host-based URL for production, or path-based fallback
+        const rawUrl = isLocal
+            ? `http://127.0.0.1:8081/proxy/${tunnelId}/`
+            : `https://${tunnelId}.${RELAY_HOST}`;
+
+        if (isLocal) {
+            console.log(`\n  🌍 Public URL: ${rawUrl}\n`);
+        } else {
+            console.log(`  ▸ Generating short link...`);
+            https.get(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(rawUrl)}`, (res) => {
+                let shortUrl = '';
+                res.on('data', chunk => shortUrl += chunk);
+                res.on('end', () => {
+                    console.log(`\n  🌍 Public URL: ${shortUrl.trim()}`);
+                    console.log(`  (Traffic secured via shortener)`);
+                    console.log(`\n  [Logs]`);
+                });
+            }).on('error', () => {
+                console.log(`\n  🌍 Public URL: ${rawUrl}\n`);
+            });
+        }
     });
 
     ws.on('message', async (data) => {
