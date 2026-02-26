@@ -1,7 +1,6 @@
 const WebSocket = require('ws');
 const http = require('http');
 const https = require('https');
-const https = require('https');
 
 // For local testing of the Node.js Relay Server, we use localhost:8081
 // In production, this connects to the live Render web service
