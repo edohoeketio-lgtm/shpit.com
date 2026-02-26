@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 60px;
+            background: #0e0e11;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            box-sizing: border-box;
+            width: 800px;
+            height: 500px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .window {
+            background: #141417;
+            border: 1px solid #2a2a30;
+            border-radius: 12px;
+            width: 680px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .titlebar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #2a2a30;
+        }
+
+        .dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dr {
+            background: #ff5f57;
+        }
+
+        .dy {
+            background: #febc2e;
+        }
+
+        .dg {
+            background: #28c840;
+        }
+
+        .title {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .icon {
+            color: #666;
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid currentColor;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .icon::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 14px;
+            height: 14px;
+            border: 1.5px solid currentColor;
+            border-radius: 4px;
+            border-bottom: none;
+            border-left: none;
+        }
+
+        .content {
+            padding: 32px;
+            font-size: 15px;
+            line-height: 2.2;
+            color: #a0a0ab;
+        }
+
+        .cmd {
+            font-size: 18px;
+            color: #e2e2e8;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .ps {
+            color: #a3e635;
+        }
+
+        .ok {
+            color: #a3e635;
+        }
+
+        .url {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .fade {
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="window">
+        <div class="titlebar">
+            <div class="dots">
+                <div class="dot dr"></div>
+                <div class="dot dy"></div>
+                <div class="dot dg"></div>
+            </div>
+            <div class="title">~/project</div>
+            <div class="icon"></div>
+        </div>
+        <div class="content">
+            <div class="cmd"><span class="ps">$</span> npx shp-serve</div>
+            <div>▸ Detecting framework... Next.js 14</div>
+            <div>▸ Opening tunnel... port 3000</div>
+            <div>▸ Generating link... done</div>
+            <div style="margin-top:12px"><span class="ok">✓ Live at </span><span
+                    class="url">https://shp.it/a7x3k9</span></div>
+            <div class="fade">↳ copied to clipboard</div>
+            <div class="fade">↳ expires in 24 h</div>
+        </div>
+    </div>
+</body>
+
+</html>
