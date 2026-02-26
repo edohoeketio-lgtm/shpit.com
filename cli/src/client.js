@@ -134,6 +134,8 @@ async function startTunnel(port) {
         }
     });
 
+    const localBrowserSockets = new Map();
+
     ws.on('message', async (data) => {
         try {
             const payload = JSON.parse(data.toString());
@@ -196,6 +198,51 @@ async function startTunnel(port) {
                 // For simplicity in this v1, we only handle GET/HEAD perfectly.
                 // To handle POST, we'd need to receive the body from the worker.
                 localReq.end();
+            } else if (payload.type === 'ws-connect') {
+                const { socketId, url, headers } = payload;
+                const localWsUrl = `ws://${targetHost}:${finalPort}${url}`;
+
+                const localWs = new WebSocket(localWsUrl, {
+                    headers: {
+                        ...headers,
+                        host: `${targetHost}:${finalPort}`
+                    }
+                });
+
+                localBrowserSockets.set(socketId, localWs);
+
+                localWs.on('message', (data, isBinary) => {
+                    ws.send(JSON.stringify({
+                        type: 'ws-message',
+                        socketId,
+                        data: isBinary ? data.toString('base64') : data.toString(),
+                        isBinary
+                    }));
+                });
+
+                localWs.on('close', () => {
+                    localBrowserSockets.delete(socketId);
+                    ws.send(JSON.stringify({ type: 'ws-close', socketId }));
+                });
+
+                localWs.on('error', (err) => {
+                    console.error(`  [!] Local WebSocket error (${socketId}):`, err.message);
+                    localWs.close();
+                });
+            } else if (payload.type === 'ws-message') {
+                const { socketId, data, isBinary } = payload;
+                const localWs = localBrowserSockets.get(socketId);
+                if (localWs && localWs.readyState === WebSocket.OPEN) {
+                    const buf = isBinary ? Buffer.from(data, 'base64') : data;
+                    localWs.send(buf);
+                }
+            } else if (payload.type === 'ws-close') {
+                const { socketId } = payload;
+                const localWs = localBrowserSockets.get(socketId);
+                if (localWs) {
+                    localWs.close();
+                    localBrowserSockets.delete(socketId);
+                }
             }
         } catch (err) {
             console.error('Failed to process message from relay:', err);

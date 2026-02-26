@@ -33,6 +33,18 @@ wss.on('connection', (ws, req) => {
                     resolveHttp(data);
                     pendingRequests.delete(data.id);
                 }
+            } else if (data.type === 'ws-message' && data.socketId) {
+                const browserWs = browserSockets.get(data.socketId);
+                if (browserWs && browserWs.readyState === WebSocket.OPEN) {
+                    const buf = data.isBinary ? Buffer.from(data.data, 'base64') : data.data;
+                    browserWs.send(buf);
+                }
+            } else if (data.type === 'ws-close' && data.socketId) {
+                const browserWs = browserSockets.get(data.socketId);
+                if (browserWs) {
+                    browserWs.close();
+                    browserSockets.delete(data.socketId);
+                }
             }
         } catch (err) {
             console.error('Error parsing CLI message:', err);
@@ -45,52 +57,95 @@ wss.on('connection', (ws, req) => {
     });
 });
 
+const browserSockets = new Map();
+
+// Helper to identify tunnel from request
+function getTunnelId(req) {
+    let tunnelId = null;
+
+    // 1. Host-based routing
+    const host = req.headers.host || '';
+    const subdomain = host.split('.')[0];
+    if (tunnels.has(subdomain)) tunnelId = subdomain;
+
+    // 2. Path-based routing
+    if (!tunnelId && req.url.startsWith('/proxy/')) {
+        const parts = req.url.split('/');
+        tunnelId = parts[2];
+    }
+
+    // 3. Cookie or Referer fallback
+    if (!tunnelId && req.headers.cookie) {
+        const value = `; ${req.headers.cookie}`;
+        const parts = value.split(`; shpit_id=`);
+        if (parts.length === 2) tunnelId = parts.pop().split(';').shift();
+    }
+
+    if (!tunnelId && req.headers.referer) {
+        const match = req.headers.referer.match(/\/proxy\/([^/]+)/);
+        if (match) tunnelId = match[1];
+    }
+
+    return (tunnelId && tunnels.has(tunnelId)) ? tunnelId : null;
+}
+
+// Handle Browser WebSocket connections (e.g. Vite HMR)
+server.on('upgrade', (req, socket, head) => {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    if (url.pathname === '/register') return; // Handled by wss
+
+    const tunnelId = getTunnelId(req);
+    if (!tunnelId) {
+        socket.destroy();
+        return;
+    }
+
+    const browserWss = new WebSocket.Server({ noServer: true });
+    browserWss.handleUpgrade(req, socket, head, (ws) => {
+        const socketId = crypto.randomUUID();
+        const cliWs = tunnels.get(tunnelId);
+
+        browserSockets.set(socketId, ws);
+
+        // Notify CLI to open local WS
+        cliWs.send(JSON.stringify({
+            type: 'ws-connect',
+            socketId,
+            url: req.url,
+            headers: req.headers
+        }));
+
+        ws.on('message', (data, isBinary) => {
+            cliWs.send(JSON.stringify({
+                type: 'ws-message',
+                socketId,
+                data: isBinary ? data.toString('base64') : data.toString(),
+                isBinary
+            }));
+        });
+
+        ws.on('close', () => {
+            browserSockets.delete(socketId);
+            if (tunnels.has(tunnelId)) {
+                tunnels.get(tunnelId).send(JSON.stringify({ type: 'ws-close', socketId }));
+            }
+        });
+    });
+});
+
 // Avoid express body parsing, we want raw streams ideally, 
 // but for v1 GET/HEAD proxying, we don't need body parsing.
 app.use((req, res, next) => {
-    let tunnelId = null;
+    const tunnelId = getTunnelId(req);
 
-    // Helper to extract tunnelId from cookies
-    const getCookie = (name) => {
-        const value = `; ${req.headers.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
-    };
-
-    // 1. Host-based routing (e.g., a7x3k9.shpthis.com)
-    const host = req.headers.host || '';
-    const subdomain = host.split('.')[0];
-    if (tunnels.has(subdomain)) {
-        tunnelId = subdomain;
-    }
-
-    // 2. Path-based routing (e.g., /proxy/abcdef/)
-    if (!tunnelId && req.path.startsWith('/proxy/')) {
+    if (req.path.startsWith('/proxy/')) {
         const parts = req.path.split('/');
-        tunnelId = parts[2];
-
-        // Sticky Session: Set cookie so assets (/, /css, etc) work
-        res.cookie('shpit_id', tunnelId, { path: '/', maxAge: 3600000 }); // 1 hour
-
+        const id = parts[2];
+        res.cookie('shpit_id', id, { path: '/', maxAge: 3600000 });
         req.url = '/' + parts.slice(3).join('/') + (req.search || '');
     }
 
-    // 3. Sticky Session Fallback (Cookies)
     if (!tunnelId) {
-        tunnelId = getCookie('shpit_id');
-    }
-
-    // 4. Referer Fallback (Reliable for assets)
-    if (!tunnelId && req.headers.referer) {
-        const refUrl = req.headers.referer;
-        if (refUrl.includes('/proxy/')) {
-            const match = refUrl.match(/\/proxy\/([^/]+)/);
-            if (match) tunnelId = match[1];
-        }
-    }
-
-    if (!tunnelId || !tunnels.has(tunnelId)) {
         return res.status(404).send('shpit: tunnel not found or offline.\\n\\nMake sure your CLI is running.');
     }
 
