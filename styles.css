@@ -1056,19 +1056,26 @@ code {
   }
 
   .modal-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto auto auto;
-    height: auto;
-    max-height: 72vh;
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+    max-height: none;
+    overflow-y: auto;
   }
 
   .mpanel-main {
-    min-height: 200px
+    flex: 1 1 auto;
+    min-height: 260px;
   }
 
   .mpanel-status,
-  .mpanel-logs {
-    grid-column: 1
+  .mpanel-logs,
+  .mpanel-actions {
+    flex: 0 0 auto;
+  }
+
+  .log-list {
+    max-height: 140px;
   }
 }
 
