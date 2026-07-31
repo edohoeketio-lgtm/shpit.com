@@ -95,8 +95,14 @@ async function startTunnel(port) {
                 let shortUrl = '';
                 res.on('data', chunk => shortUrl += chunk);
                 res.on('end', () => {
-                    console.log(`\n  🌍 Public URL: ${shortUrl.trim()}`);
-                    console.log(`  (Traffic secured via shortener)`);
+                    const finalUrl = shortUrl.trim();
+                    if (finalUrl.startsWith('Error')) {
+                        console.log(`\n  🌍 Public URL: ${rawUrl}`);
+                        console.log(`  (Note: URL shortener temporarily unavailable)`);
+                    } else {
+                        console.log(`\n  🌍 Public URL: ${finalUrl}`);
+                        console.log(`  (Traffic secured via shortener)`);
+                    }
                     console.log(`\n  [Logs]`);
                     if (!result.alive) {
                         console.log(`  [!] Note: Incoming requests will fail until you start your server on port ${finalPort}.`);
